@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlateCost - Daily Meal & Expense Tracker</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-light: #334155;
+      --primary: #f97316;
+      --primary-hover: #ea580c;
+      --primary-subtle: rgba(249, 115, 22, 0.15);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #334155;
+      --success: #10b981;
+      --danger: #ef4444;
+      --radius: 14px;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 16px;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      min-height: calc(100vh - 32px);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page {
+      display: none;
+      flex-direction: column;
+      width: 100%;
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .page.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Common Components */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 20px;
+      border-radius: var(--radius);
+      border: none;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #fb923c, var(--primary));
+    }
+
+    .btn-secondary {
+      background-color: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background-color: var(--surface-light);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover {
+      color: var(--text);
+      border-color: var(--text-muted);
+    }
+
+    .card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .page-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Page 1: Home Page */
+    #page-home {
+      flex: 1;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 24px 0;
+    }
+
+    .hero-badge {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(249,115,22,0.2), rgba(234,88,12,0.05));
+      border: 2px solid var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      box-shadow: 0 0 35px rgba(249, 115, 22, 0.25);
+    }
+
+    .hero-badge svg {
+      width: 48px;
+      height: 48px;
+      color: var(--primary);
+    }
+
+    .app-title {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+      background: linear-gradient(to right, #ffffff, #fed7aa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .app-tagline {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      max-width: 300px;
+      line-height: 1.4;
+    }
+
+    .home-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .home-actions .btn {
+      padding: 16px 24px;
+      font-size: 1.1rem;
+    }
+
+    /* Page 2: Calendar Page */
+    .calendar-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .calendar-nav h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .nav-arrow-btn {
+      background: var(--surface-light);
+      border: none;
+      color: var(--text);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+
+    .calendar-header-day {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 8px 0;
+      text-transform: uppercase;
+    }
+
+    .calendar-day {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      position: relative;
+      transition: background 0.15s ease;
+      background: transparent;
+      border: 1px solid transparent;
+    }
+
+    .calendar-day:hover {
+      background: var(--surface-light);
+    }
+
+    .calendar-day.empty {
+      cursor: default;
+      background: transparent;
+    }
+
+    .calendar-day.today {
+      border-color: var(--primary);
+    }
+
+    .calendar-day.selected {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .calendar-day.has-data::after {
+      content: '';
+      width: 5px;
+      height: 5px;
+      background-color: var(--success);
+      border-radius: 50%;
+      position: absolute;
+      bottom: 4px;
+    }
+
+    .calendar-day.selected.has-data::after {
+      background-color: #fff;
+    }
+
+    /* Selected Date Meals Section */
+    .date-section {
+      display: none;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .date-section.active {
+      display: block;
+    }
+
+    .section-header {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .meal-toggles {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .meal-toggle-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: var(--surface-light);
+      padding: 12px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .meal-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .meal-info span {
+      font-weight: 500;
+    }
+
+    .meal-cost-badge {
+      font-size: 0.75rem;
+      background: var(--primary-subtle);
+      color: var(--primary);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .custom-checkbox {
+      width: 22px;
+      height: 22px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    /* Page 3: Add Expense Page */
+    .date-banner {
+      background: var(--surface);
+      border-left: 4px solid var(--primary);
+      padding: 14px 18px;
+      border-radius: 0 10px 10px 0;
+      margin-bottom: 16px;
+    }
+
+    .date-banner .date-text {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .date-banner .meals-hint {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .expense-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .form-input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+    }
+
+    .input-desc {
+      flex: 2;
+    }
+
+    .input-amount {
+      flex: 1;
+    }
+
+    .expense-list-container {
+      margin-bottom: 20px;
+    }
+
+    .expense-list-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .expense-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .expense-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 8px;
+    }
+
+    .expense-item-desc {
+      font-size: 0.95rem;
+    }
+
+    .expense-item-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .expense-item-amount {
+      font-weight: 600;
+      color: var(--primary);
+    }
+
+    .btn-delete-item {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+      font-size: 1rem;
+    }
+
+    .btn-delete-item:hover {
+      color: var(--danger);
+    }
+
+    .empty-expenses {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-style: italic;
+      padding: 8px 0;
+    }
+
+    .cost-preview-card {
+      background: var(--surface-light);
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      margin-bottom: 20px;
+    }
+
+    .cost-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .cost-row.total-row {
+      border-top: 1px dashed var(--border);
+      padding-top: 8px;
+      margin-top: 8px;
+      margin-bottom: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .cost-row.total-row span:last-child {
+      color: var(--primary);
+    }
+
+    /* Page 4: View Expense Page */
+    .month-filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .month-filter-display {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .days-table-container {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 16px;
+    }
+
+    .days-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .day-row-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .day-row-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .day-row-date {
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .meal-badges {
+      display: flex;
+      gap: 6px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: var(--surface-light);
+      color: var(--text-muted);
+    }
+
+    .badge.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .badge.active.badge-dinner {
+      background: #ea580c;
+    }
+
+    .day-row-right {
+      text-align: right;
+    }
+
+    .day-row-cost {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .day-row-subtext {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .grand-total-card {
+      background: linear-gradient(135deg, rgba(249,115,22,0.15), rgba(234,88,12,0.05));
+      border: 1px solid var(--primary);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .grand-total-label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .grand-total-val {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .day-row-card.clickable {
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+
+    .day-row-card.clickable:hover {
+      background: var(--surface-light);
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .edit-pill {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--primary);
+      background: var(--primary-subtle);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+    }
+
+    /* Modal / Alert */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1000;
+      animation: fadeIn 0.15s ease-out;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--primary);
+      border-radius: 18px;
+      padding: 24px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+
+    .modal-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--primary-subtle);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px auto;
+    }
+
+    .modal-icon svg {
+      width: 32px;
+      height: 32px;
+    }
+
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .modal-amount {
+      font-size: 2.4rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin: 12px 0;
+    }
+
+    .modal-details {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- PAGE 1: HOME PAGE -->
+  <section id="page-home" class="page active">
+    <div class="hero-badge">
+      <!-- Cutlery & Plate Icon -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+        <path d="M7 2v20"/>
+        <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+      </svg>
+    </div>
+    <h1 class="app-title">PlateCost</h1>
+    <p class="app-tagline">Track daily meals, fixed dinner costs, and miscellaneous expenses with ease.</p>
+
+    <div class="home-actions">
+      <button class="btn btn-primary" onclick="navigateTo('page-calendar')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Calendar
+      </button>
+      <button class="btn btn-secondary" onclick="navigateTo('page-view-expense')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"/><path d="M12 2v10"/><path d="m17 7-5-5-5 5"/></svg>
+        View Expense
+      </button>
+    </div>
+  </section>
+
+  <!-- PAGE 2: CALENDAR PAGE -->
+  <section id="page-calendar" class="page">
+    <div class="header-bar">
+      <h2 class="page-title">Select Date</h2>
+      <button class="btn btn-outline" style="padding: 8px 14px; font-size: 0.85rem;" onclick="navigateTo('page-home')">
+        Back to Home
+      </button>
+    </div>
+
+    <!-- Calendar Card -->
+    <div class="card">
+      <div class="calendar-nav">
+        <button class="nav-arrow-btn" onclick="changeMonth(-1)">&larr;</button>
+        <h3 id="calendar-month-year">October 2026</h3>
+        <button class="nav-arrow-btn" onclick="changeMonth(1)">&rarr;</button>
+      </div>
+
+      <div class="calendar-grid">
+        <div class="calendar-header-day">Su</div>
+        <div class="calendar-header-day">Mo</div>
+        <div class="calendar-header-day">Tu</div>
+        <div class="calendar-header-day">We</div>
+        <div class="calendar-header-day">Th</div>
+        <div class="calendar-header-day">Fr</div>
+        <div class="calendar-header-day">Sa</div>
+      </div>
+      <div id="calendar-days-container" class="calendar-grid" style="margin-top: 6px;">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+
+    <!-- Date Details & Meals Section -->
+    <div id="calendar-date-section" class="card date-section">
+      <div class="section-header">
+        <span id="selected-date-heading">Selected Date</span>
+        <span style="font-size: 0.85rem; color: var(--text-muted);" id="date-status-label">Tap to set meals</span>
+      </div>
+
+      <div class="meal-toggles">
+        <label class="meal-toggle-item">
+          <div class="meal-info">
+            <span>Breakfast</span>
+            <span class="meal-cost-badge" id="badge-rate-breakfast" style="display: none;">Fixed: 0</span>
+          </div>
+          <input type="checkbox" id="check-breakfast" class="custom-checkbox" onchange="onMealCheckboxChanged()">
+        </label>
+
+        <label class="meal-toggle-item">
+          <div class="meal-info">
+            <span>Lunch</span>
+            <span class="meal-cost-badge" id="badge-rate-lunch" style="display: none;">Fixed: 0</span>
+          </div>
+          <input type="checkbox" id="check-lunch" class="custom-checkbox" onchange="onMealCheckboxChanged()">
+        </label>
+
+        <label class="meal-toggle-item">
+          <div class="meal-info">
+            <span>Dinner</span>
+            <span class="meal-cost-badge" id="badge-rate-dinner">Fixed: 60</span>
+          </div>
+          <input type="checkbox" id="check-dinner" class="custom-checkbox" onchange="onMealCheckboxChanged()">
+        </label>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; font-size: 0.9rem; color: var(--text-muted);">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span>Meals Subtotal:</span>
+          <button type="button" class="btn btn-outline" style="padding: 2px 8px; font-size: 0.75rem; border-color: var(--primary); color: var(--primary); border-radius: 4px;" onclick="openMealRatesModal()">Rates</button>
+        </div>
+        <span id="calendar-dinner-cost-track" style="font-weight: 700; color: var(--primary);">0</span>
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%;" onclick="goToExpensePage()">
+        Expenses &rarr;
+      </button>
+    </div>
+
+    <button class="btn btn-secondary" style="width: 100%; margin-top: auto;" onclick="navigateTo('page-home')">
+      Back to Home
+    </button>
+  </section>
+
+  <!-- PAGE 3: ADD EXPENSE PAGE -->
+  <section id="page-expense" class="page">
+    <div class="header-bar">
+      <h2 class="page-title">Add Expenses</h2>
+      <button class="btn btn-outline" style="padding: 8px 14px; font-size: 0.85rem;" onclick="navigateTo('page-calendar')">
+        Change Date
+      </button>
+    </div>
+
+    <!-- Date Banner -->
+    <div class="date-banner">
+      <div class="date-text" id="expense-date-display">2026-10-15</div>
+      <div class="meals-hint" id="expense-meals-hint">Meals: None</div>
+    </div>
+
+    <!-- Form to add miscellaneous expenses -->
+    <div class="card">
+      <div class="section-header">Miscellaneous Expense</div>
+      <form class="expense-form" onsubmit="handleAddExpense(event)">
+        <div class="input-row">
+          <input type="text" id="input-expense-desc" class="form-input input-desc" placeholder="Description (e.g. Snack, Coffee)" required>
+          <input type="number" id="input-expense-amount" class="form-input input-amount" placeholder="Amount" step="0.01" min="0" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="padding: 10px 18px;">
+          + Add Expense
+        </button>
+      </form>
+    </div>
+
+    <!-- Running list of expenses -->
+    <div class="expense-list-container">
+      <div class="expense-list-title">Added Expenses for Day</div>
+      <ul id="expense-items-list" class="expense-list">
+        <!-- Rendered via JavaScript -->
+      </ul>
+    </div>
+
+    <!-- Running Cost Breakdown -->
+    <div class="cost-preview-card">
+      <div class="cost-row" id="row-preview-breakfast" style="display: none;">
+        <span>Breakfast Cost</span>
+        <span id="preview-breakfast-cost">0</span>
+      </div>
+      <div class="cost-row" id="row-preview-lunch" style="display: none;">
+        <span>Lunch Cost</span>
+        <span id="preview-lunch-cost">0</span>
+      </div>
+      <div class="cost-row">
+        <span>Dinner Cost</span>
+        <span id="preview-dinner-cost">0</span>
+      </div>
+      <div class="cost-row">
+        <span>Additional Expenses</span>
+        <span id="preview-misc-cost">0</span>
+      </div>
+      <div class="cost-row total-row">
+        <span>Total Day Cost</span>
+        <span id="preview-total-cost">0</span>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" style="width: 100%; margin-bottom: 10px; font-size: 1.05rem;" onclick="handleFinishDay()">
+      Finish Day
+    </button>
+    <button class="btn btn-secondary" style="width: 100%;" onclick="navigateTo('page-home')">
+      Back to Home
+    </button>
+  </section>
+
+  <!-- PAGE 4: VIEW EXPENSE PAGE -->
+  <section id="page-view-expense" class="page">
+    <div class="header-bar">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button class="nav-arrow-btn" onclick="navigateTo('page-home')" title="Back to Home">&larr;</button>
+        <h2 class="page-title">Expense Summary</h2>
+      </div>
+    </div>
+
+    <!-- Month Filter -->
+    <div class="card" style="margin-bottom: 12px; padding: 12px 16px;">
+      <div class="month-filter-bar" style="margin-bottom: 0;">
+        <button class="nav-arrow-btn" onclick="changeViewMonth(-1)">&larr;</button>
+        <div class="month-filter-display" id="view-month-display">October 2026</div>
+        <button class="nav-arrow-btn" onclick="changeViewMonth(1)">&rarr;</button>
+      </div>
+    </div>
+
+    <!-- Days Table / List -->
+    <div class="days-table-container">
+      <div id="view-days-list" class="days-list">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+
+    <!-- Grand Total Card -->
+    <div class="grand-total-card">
+      <div>
+        <div class="grand-total-label">Month Total</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);" id="days-logged-count">0 days recorded</div>
+      </div>
+      <div class="grand-total-val" id="view-grand-total">0</div>
+    </div>
+  </section>
+
+</div>
+
+<!-- Pop-up Alert Modal for Finish Day -->
+<div id="finish-day-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+    </div>
+    <div class="modal-title">Day Saved!</div>
+    <div style="font-size: 0.9rem; color: var(--text-muted);">Total Day Cost</div>
+    <div class="modal-amount" id="modal-total-display">60</div>
+    <div class="modal-details" id="modal-breakdown-details">
+      Dinner: 60<br>
+      Additional Expenses: 0
+    </div>
+    <button class="btn btn-primary" style="width: 100%;" onclick="dismissModalAndGoHome()">
+      Done & Return Home
+    </button>
+  </div>
+</div>
+
+<!-- Pop-up Modal to Edit Daily Expense -->
+<div id="edit-day-modal" class="modal-overlay">
+  <div class="modal-box" style="max-width: 420px; text-align: left; max-height: 90vh; overflow-y: auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+      <div>
+        <h3 class="modal-title" style="margin-bottom: 2px; font-size: 1.2rem;">Edit Daily Expense</h3>
+        <span id="edit-modal-date-title" style="font-size: 0.9rem; font-weight: 700; color: var(--primary);">15-10-2026</span>
+      </div>
+      <button class="nav-arrow-btn" onclick="closeEditDayModal()">&times;</button>
+    </div>
+
+    <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">MEALS</div>
+    <div class="meal-toggles" style="margin-bottom: 12px;">
+      <label class="meal-toggle-item" style="padding: 10px 14px;">
+        <span>Breakfast</span>
+        <input type="checkbox" id="edit-check-breakfast" class="custom-checkbox" onchange="onEditMealCheckboxChanged()">
+      </label>
+      <label class="meal-toggle-item" style="padding: 10px 14px;">
+        <span>Lunch</span>
+        <input type="checkbox" id="edit-check-lunch" class="custom-checkbox" onchange="onEditMealCheckboxChanged()">
+      </label>
+      <label class="meal-toggle-item" style="padding: 10px 14px;">
+        <div class="meal-info">
+          <span>Dinner</span>
+          <span class="meal-cost-badge">Fixed: 60</span>
+        </div>
+        <input type="checkbox" id="edit-check-dinner" class="custom-checkbox" onchange="onEditMealCheckboxChanged()">
+      </label>
+    </div>
+
+    <div style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px;">MISC EXPENSES</div>
+    <ul id="edit-modal-expenses-list" class="expense-list" style="margin-bottom: 10px; max-height: 140px;"></ul>
+
+    <form class="expense-form" onsubmit="handleAddEditModalExpense(event)" style="margin-bottom: 14px;">
+      <div class="input-row">
+        <input type="text" id="edit-input-desc" class="form-input input-desc" placeholder="Add item" required style="padding: 8px 10px; font-size: 0.85rem;">
+        <input type="number" id="edit-input-amount" class="form-input input-amount" placeholder="Amount" step="0.01" min="0" required style="padding: 8px 10px; font-size: 0.85rem;">
+        <button type="submit" class="btn btn-primary" style="padding: 8px 14px; font-size: 0.85rem;">+ Add</button>
+      </div>
+    </form>
+
+    <div class="cost-preview-card" style="padding: 10px 14px; margin-bottom: 14px;">
+      <div class="cost-row" style="font-size: 0.85rem;">
+        <span>Dinner Cost</span>
+        <span id="edit-modal-dinner-val">0.00</span>
+      </div>
+      <div class="cost-row" style="font-size: 0.85rem;">
+        <span>Misc Expenses</span>
+        <span id="edit-modal-misc-val">0.00</span>
+      </div>
+      <div class="cost-row total-row" style="font-size: 1rem;">
+        <span>Total Day Cost</span>
+        <span id="edit-modal-total-val" style="color: var(--primary);">0.00</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 8px; flex-direction: column;">
+      <button class="btn btn-primary" style="width: 100%;" onclick="saveEditModalChanges()">Save Changes</button>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn btn-outline" style="flex: 1; border-color: var(--danger); color: var(--danger);" onclick="deleteCurrentEditDay()">Delete Record</button>
+        <button class="btn btn-secondary" style="flex: 1;" onclick="closeEditDayModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Meal Rates Settings -->
+<div id="meal-rates-modal" class="modal-overlay">
+  <div class="modal-box" style="max-width: 400px; text-align: left;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h3 class="modal-title" style="margin-bottom: 0; font-size: 1.25rem;">Meal Rates Settings</h3>
+      <button class="nav-arrow-btn" onclick="closeMealRatesModal()">&times;</button>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+      Set the default fixed cost for each meal. These rates will automatically be applied whenever meals are selected.
+    </p>
+
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px;">
+      <div>
+        <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 4px;">Breakfast Fixed Rate</label>
+        <input type="number" id="input-rate-breakfast" class="form-input" style="width: 100%;" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div>
+        <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 4px;">Lunch Fixed Rate</label>
+        <input type="number" id="input-rate-lunch" class="form-input" style="width: 100%;" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div>
+        <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 4px;">Dinner Fixed Rate</label>
+        <input type="number" id="input-rate-dinner" class="form-input" style="width: 100%;" step="0.01" min="0" placeholder="60.00">
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <button class="btn btn-primary" style="width: 100%;" onclick="saveMealRatesFromModal()">Save Rates</button>
+      <button class="btn btn-secondary" style="width: 100%; font-size: 0.85rem;" onclick="closeMealRatesModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // -------------------------------------------------------------
+  // STATE MANAGEMENT & LOCAL STORAGE
+  // -------------------------------------------------------------
+  const STORAGE_KEY = "platecost_records";
+  const MEAL_RATES_KEY = "platecost_meal_rates";
+
+  function getMealRates() {
+    try {
+      const data = localStorage.getItem(MEAL_RATES_KEY);
+      if (data) {
+        const parsed = JSON.parse(data);
+        return {
+          breakfast: Number(parsed.breakfast || 0),
+          lunch: Number(parsed.lunch || 0),
+          dinner: Number(parsed.dinner !== undefined ? parsed.dinner : 60)
+        };
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return { breakfast: 0, lunch: 0, dinner: 60 };
+  }
+
+  function saveMealRates(rates) {
+    localStorage.setItem(MEAL_RATES_KEY, JSON.stringify(rates));
+    updateMealRateBadges();
+    updateCalendarDinnerCostTrack();
+    if (currentNavPage === 'page-expense') {
+      updateCostBreakdown();
+    }
+  }
+
+  function openMealRatesModal() {
+    const rates = getMealRates();
+    document.getElementById('input-rate-breakfast').value = rates.breakfast;
+    document.getElementById('input-rate-lunch').value = rates.lunch;
+    document.getElementById('input-rate-dinner').value = rates.dinner;
+    document.getElementById('meal-rates-modal').classList.add('active');
+  }
+
+  function closeMealRatesModal() {
+    document.getElementById('meal-rates-modal').classList.remove('active');
+  }
+
+  function saveMealRatesFromModal() {
+    const b = parseFloat(document.getElementById('input-rate-breakfast').value);
+    const l = parseFloat(document.getElementById('input-rate-lunch').value);
+    const d = parseFloat(document.getElementById('input-rate-dinner').value);
+    if (isNaN(b) || b < 0 || isNaN(l) || l < 0 || isNaN(d) || d < 0) {
+      alert("Please enter valid non-negative amounts for all meal rates.");
+      return;
+    }
+    saveMealRates({ breakfast: b, lunch: l, dinner: d });
+    closeMealRatesModal();
+  }
+
+  function resetDefaultMealRates() {
+    document.getElementById('input-rate-breakfast').value = "0";
+    document.getElementById('input-rate-lunch').value = "0";
+    document.getElementById('input-rate-dinner').value = "60";
+  }
+
+  function updateMealRateBadges() {
+    const rates = getMealRates();
+    const bBadge = document.getElementById('badge-rate-breakfast');
+    if (bBadge) {
+      bBadge.textContent = rates.breakfast > 0 ? `Fixed: ${rates.breakfast}` : '';
+      bBadge.style.display = rates.breakfast > 0 ? 'inline-block' : 'none';
+    }
+    const lBadge = document.getElementById('badge-rate-lunch');
+    if (lBadge) {
+      lBadge.textContent = rates.lunch > 0 ? `Fixed: ${rates.lunch}` : '';
+      lBadge.style.display = rates.lunch > 0 ? 'inline-block' : 'none';
+    }
+    const dBadge = document.getElementById('badge-rate-dinner');
+    if (dBadge) {
+      dBadge.textContent = `Fixed: ${rates.dinner}`;
+    }
+  }
+
+  // Retrieve records object: { "YYYY-MM-DD": { breakfast, lunch, dinner, dinnerCost, additionalExpenses: [...], totalDayCost } }
+  function getRecords() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : {};
+    } catch (e) {
+      console.error("Error reading localStorage:", e);
+      return {};
+    }
+  }
+
+  function saveRecord(dateStr, record) {
+    const records = getRecords();
+    records[dateStr] = record;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  }
+
+  function getRecordForDate(dateStr) {
+    const records = getRecords();
+    return records[dateStr] || null;
+  }
+
+  // -------------------------------------------------------------
+  // APPLICATION STATE
+  // -------------------------------------------------------------
+  let currentNavPage = 'page-home';
+  let calendarYear = new Date().getFullYear();
+  let calendarMonth = new Date().getMonth(); // 0-11
+  let selectedDateStr = formatDate(new Date());
+
+  // Active working record for the selected date
+  let workingBreakfast = false;
+  let workingLunch = false;
+  let workingDinner = false;
+  let workingExpenses = []; // [ { id, description, amount } ]
+
+  let viewExpenseYear = new Date().getFullYear();
+  let viewExpenseMonth = new Date().getMonth();
+
+  // Helper date formatter: YYYY-MM-DD
+  function formatDate(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  // Formatter to date-month-year format (DD-MM-YYYY)
+  function formatDisplayDate(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateStr;
+  }
+
+  // -------------------------------------------------------------
+  // NAVIGATION
+  // -------------------------------------------------------------
+  function navigateTo(pageId) {
+    document.querySelectorAll('.page').forEach(page => {
+      page.classList.remove('active');
+    });
+
+    const target = document.getElementById(pageId);
+    if (target) {
+      target.classList.add('active');
+      currentNavPage = pageId;
+    }
+
+    if (pageId === 'page-calendar') {
+      renderCalendar();
+    } else if (pageId === 'page-view-expense') {
+      renderViewExpense();
+    }
+  }
+
+  // -------------------------------------------------------------
+  // PAGE 2: CALENDAR LOGIC
+  // -------------------------------------------------------------
+  const MONTH_NAMES = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  function changeMonth(delta) {
+    calendarMonth += delta;
+    if (calendarMonth < 0) {
+      calendarMonth = 11;
+      calendarYear--;
+    } else if (calendarMonth > 11) {
+      calendarMonth = 0;
+      calendarYear++;
+    }
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const monthYearEl = document.getElementById('calendar-month-year');
+    monthYearEl.textContent = `${MONTH_NAMES[calendarMonth]} ${calendarYear}`;
+
+    const container = document.getElementById('calendar-days-container');
+    container.innerHTML = '';
+
+    const firstDayIndex = new Date(calendarYear, calendarMonth, 1).getDay();
+    const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+    const todayStr = formatDate(new Date());
+    const records = getRecords();
+
+    // Fill leading empty days
+    for (let i = 0; i < firstDayIndex; i++) {
+      const emptyCell = document.createElement('div');
+      emptyCell.className = 'calendar-day empty';
+      container.appendChild(emptyCell);
+    }
+
+    // Fill month days
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dayCell = document.createElement('div');
+      dayCell.className = 'calendar-day';
+      dayCell.textContent = d;
+
+      const dateObj = new Date(calendarYear, calendarMonth, d);
+      const cellDateStr = formatDate(dateObj);
+
+      if (cellDateStr === todayStr) {
+        dayCell.classList.add('today');
+      }
+      if (cellDateStr === selectedDateStr) {
+        dayCell.classList.add('selected');
+      }
+      if (records[cellDateStr]) {
+        dayCell.classList.add('has-data');
+      }
+
+      dayCell.addEventListener('click', () => {
+        selectCalendarDate(cellDateStr);
+      });
+
+      container.appendChild(dayCell);
+    }
+
+    // Refresh selected date section if selected
+    if (selectedDateStr) {
+      loadDateIntoCalendarSection(selectedDateStr);
+    }
+  }
+
+  function selectCalendarDate(dateStr) {
+    selectedDateStr = dateStr;
+    renderCalendar();
+    loadDateIntoCalendarSection(dateStr);
+  }
+
+  function loadDateIntoCalendarSection(dateStr) {
+    const section = document.getElementById('calendar-date-section');
+    section.classList.add('active');
+
+    const heading = document.getElementById('selected-date-heading');
+    heading.textContent = `Meals for ${formatDisplayDate(dateStr)}`;
+
+    const existing = getRecordForDate(dateStr);
+    if (existing) {
+      workingBreakfast = !!existing.breakfast;
+      workingLunch = !!existing.lunch;
+      workingDinner = !!existing.dinner;
+      workingExpenses = Array.isArray(existing.additionalExpenses) ? [...existing.additionalExpenses] : [];
+      document.getElementById('date-status-label').textContent = "Saved data loaded";
+    } else {
+      // Default initial states for fresh date
+      workingBreakfast = false;
+      workingLunch = false;
+      workingDinner = false;
+      workingExpenses = [];
+      document.getElementById('date-status-label').textContent = "No data yet";
+    }
+
+    document.getElementById('check-breakfast').checked = workingBreakfast;
+    document.getElementById('check-lunch').checked = workingLunch;
+    document.getElementById('check-dinner').checked = workingDinner;
+
+    updateCalendarDinnerCostTrack();
+  }
+
+  function onMealCheckboxChanged() {
+    workingBreakfast = document.getElementById('check-breakfast').checked;
+    workingLunch = document.getElementById('check-lunch').checked;
+    workingDinner = document.getElementById('check-dinner').checked;
+    updateCalendarDinnerCostTrack();
+  }
+
+  function updateCalendarDinnerCostTrack() {
+    const rates = getMealRates();
+    const bCost = workingBreakfast ? rates.breakfast : 0;
+    const lCost = workingLunch ? rates.lunch : 0;
+    const dCost = workingDinner ? rates.dinner : 0;
+    const totalMeals = bCost + lCost + dCost;
+    document.getElementById('calendar-dinner-cost-track').textContent = `${totalMeals.toFixed(2)}`;
+  }
+
+  function goToExpensePage() {
+    if (!selectedDateStr) {
+      alert("Please select a date on the calendar first.");
+      return;
+    }
+    // Update state from checkboxes before moving
+    workingBreakfast = document.getElementById('check-breakfast').checked;
+    workingLunch = document.getElementById('check-lunch').checked;
+    workingDinner = document.getElementById('check-dinner').checked;
+
+    renderExpensePage();
+    navigateTo('page-expense');
+  }
+
+  // -------------------------------------------------------------
+  // PAGE 3: ADD EXPENSES LOGIC
+  // -------------------------------------------------------------
+  function renderExpensePage() {
+    document.getElementById('expense-date-display').textContent = formatDisplayDate(selectedDateStr);
+
+    const meals = [];
+    if (workingBreakfast) meals.push("Breakfast (B)");
+    if (workingLunch) meals.push("Lunch (L)");
+    if (workingDinner) meals.push(`Dinner (D - Fixed 60)`);
+
+    const hintEl = document.getElementById('expense-meals-hint');
+    hintEl.textContent = meals.length > 0 ? `Selected Meals: ${meals.join(', ')}` : "No meals selected";
+
+    renderExpensesList();
+    updateCostBreakdown();
+  }
+
+  function handleAddExpense(e) {
+    e.preventDefault();
+    const descInput = document.getElementById('input-expense-desc');
+    const amountInput = document.getElementById('input-expense-amount');
+
+    const desc = descInput.value.trim();
+    const amount = parseFloat(amountInput.value);
+
+    if (!desc || isNaN(amount) || amount < 0) {
+      alert("Please enter a valid description and amount.");
+      return;
+    }
+
+    workingExpenses.push({
+      id: Date.now(),
+      description: desc,
+      amount: amount
+    });
+
+    descInput.value = '';
+    amountInput.value = '';
+    descInput.focus();
+
+    renderExpensesList();
+    updateCostBreakdown();
+  }
+
+  function removeExpense(id) {
+    workingExpenses = workingExpenses.filter(item => item.id !== id);
+    renderExpensesList();
+    updateCostBreakdown();
+  }
+
+  function renderExpensesList() {
+    const listEl = document.getElementById('expense-items-list');
+    listEl.innerHTML = '';
+
+    if (workingExpenses.length === 0) {
+      listEl.innerHTML = '<li class="empty-expenses">No additional expenses added for this day yet.</li>';
+      return;
+    }
+
+    workingExpenses.forEach(item => {
+      const li = document.createElement('li');
+      li.className = 'expense-item';
+      li.innerHTML = `
+        <span class="expense-item-desc">${escapeHtml(item.description)}</span>
+        <div class="expense-item-right">
+          <span class="expense-item-amount">${Number(item.amount).toFixed(2)}</span>
+          <button class="btn-delete-item" title="Remove" onclick="removeExpense(${item.id})">&times;</button>
+        </div>
+      `;
+      listEl.appendChild(li);
+    });
+  }
+
+  function updateCostBreakdown() {
+    const rates = getMealRates();
+    const breakfastCost = workingBreakfast ? rates.breakfast : 0;
+    const lunchCost = workingLunch ? rates.lunch : 0;
+    const dinnerCost = workingDinner ? rates.dinner : 0;
+    const miscTotal = workingExpenses.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const totalDayCost = breakfastCost + lunchCost + dinnerCost + miscTotal;
+
+    const bRow = document.getElementById('row-preview-breakfast');
+    if (bRow) {
+      bRow.style.display = (breakfastCost > 0 || workingBreakfast) ? 'flex' : 'none';
+      document.getElementById('preview-breakfast-cost').textContent = `${breakfastCost.toFixed(2)}`;
+    }
+    const lRow = document.getElementById('row-preview-lunch');
+    if (lRow) {
+      lRow.style.display = (lunchCost > 0 || workingLunch) ? 'flex' : 'none';
+      document.getElementById('preview-lunch-cost').textContent = `${lunchCost.toFixed(2)}`;
+    }
+
+    document.getElementById('preview-dinner-cost').textContent = `${dinnerCost.toFixed(2)}`;
+    document.getElementById('preview-misc-cost').textContent = `${miscTotal.toFixed(2)}`;
+    document.getElementById('preview-total-cost').textContent = `${totalDayCost.toFixed(2)}`;
+
+    return { breakfastCost, lunchCost, dinnerCost, miscTotal, totalDayCost };
+  }
+
+  function handleFinishDay() {
+    const { breakfastCost, lunchCost, dinnerCost, miscTotal, totalDayCost } = updateCostBreakdown();
+
+    const record = {
+      date: selectedDateStr,
+      breakfast: workingBreakfast,
+      lunch: workingLunch,
+      dinner: workingDinner,
+      breakfastCost: breakfastCost,
+      lunchCost: lunchCost,
+      dinnerCost: dinnerCost,
+      additionalExpenses: workingExpenses,
+      totalDayCost: totalDayCost,
+      timestamp: Date.now()
+    };
+
+    saveRecord(selectedDateStr, record);
+
+    document.getElementById('modal-total-display').textContent = `${totalDayCost.toFixed(2)}`;
+    let detailsHtml = `<strong>Date:</strong> ${formatDisplayDate(selectedDateStr)}<br>`;
+    if (breakfastCost > 0) detailsHtml += `<strong>Breakfast:</strong> ${breakfastCost.toFixed(2)}<br>`;
+    if (lunchCost > 0) detailsHtml += `<strong>Lunch:</strong> ${lunchCost.toFixed(2)}<br>`;
+    detailsHtml += `<strong>Dinner:</strong> ${dinnerCost.toFixed(2)}<br>`;
+    detailsHtml += `<strong>Additional Expenses:</strong> ${miscTotal.toFixed(2)} (${workingExpenses.length} items)`;
+
+    document.getElementById('modal-breakdown-details').innerHTML = detailsHtml;
+    document.getElementById('finish-day-modal').classList.add('active');
+  }
+
+  function dismissModalAndGoHome() {
+    document.getElementById('finish-day-modal').classList.remove('active');
+    navigateTo('page-home');
+  }
+
+  // -------------------------------------------------------------
+  // PAGE 4: VIEW EXPENSES LOGIC
+  // -------------------------------------------------------------
+  function changeViewMonth(delta) {
+    viewExpenseMonth += delta;
+    if (viewExpenseMonth < 0) {
+      viewExpenseMonth = 11;
+      viewExpenseYear--;
+    } else if (viewExpenseMonth > 11) {
+      viewExpenseMonth = 0;
+      viewExpenseYear++;
+    }
+    renderViewExpense();
+  }
+
+  function renderViewExpense() {
+    const monthDisplay = document.getElementById('view-month-display');
+    monthDisplay.textContent = `${MONTH_NAMES[viewExpenseMonth]} ${viewExpenseYear}`;
+
+    const listEl = document.getElementById('view-days-list');
+    listEl.innerHTML = '';
+
+    const records = getRecords();
+    const targetMonthPrefix = `${viewExpenseYear}-${String(viewExpenseMonth + 1).padStart(2, '0')}`;
+
+    // Filter keys matching selected year and month
+    const matchingDates = Object.keys(records)
+      .filter(dateKey => dateKey.startsWith(targetMonthPrefix))
+      .sort();
+
+    let grandTotal = 0;
+
+    if (matchingDates.length === 0) {
+      listEl.innerHTML = `
+        <div class="card" style="text-align: center; color: var(--text-muted); padding: 30px;">
+          No saved expenses for ${MONTH_NAMES[viewExpenseMonth]} ${viewExpenseYear}.
+        </div>
+      `;
+    } else {
+      matchingDates.forEach(dateKey => {
+        const item = records[dateKey];
+        const dayCost = Number(item.totalDayCost || 0);
+        grandTotal += dayCost;
+
+        const rowCard = document.createElement('div');
+        rowCard.className = 'day-row-card clickable';
+        rowCard.title = 'Click to edit daily expense';
+        rowCard.onclick = () => openEditDayModal(dateKey);
+
+        // Meal chips (B, L, D)
+        const bActive = item.breakfast ? 'active' : '';
+        const lActive = item.lunch ? 'active' : '';
+        const dActive = item.dinner ? 'active badge-dinner' : '';
+
+        const miscCount = item.additionalExpenses ? item.additionalExpenses.length : 0;
+
+        rowCard.innerHTML = `
+          <div class="day-row-left">
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span class="day-row-date">${escapeHtml(formatDisplayDate(dateKey))}</span>
+              <span class="edit-pill">Edit</span>
+            </div>
+            <div class="meal-badges">
+              <span class="badge ${bActive}" title="Breakfast">B</span>
+              <span class="badge ${lActive}" title="Lunch">L</span>
+              <span class="badge ${dActive}" title="Dinner">D</span>
+            </div>
+          </div>
+          <div class="day-row-right">
+            <div class="day-row-cost">${dayCost.toFixed(2)}</div>
+            <div class="day-row-subtext">${miscCount} extra ${miscCount === 1 ? 'item' : 'items'}</div>
+          </div>
+        `;
+        listEl.appendChild(rowCard);
+      });
+    }
+
+    document.getElementById('days-logged-count').textContent = `${matchingDates.length} ${matchingDates.length === 1 ? 'day' : 'days'} recorded`;
+    document.getElementById('view-grand-total').textContent = `${grandTotal.toFixed(2)}`;
+  }
+
+  // -------------------------------------------------------------
+  // EDIT DAILY EXPENSE MODAL LOGIC
+  // -------------------------------------------------------------
+  let editingDateKey = null;
+  let editingRecord = null;
+
+  function openEditDayModal(dateKey) {
+    editingDateKey = dateKey;
+    const existing = getRecordForDate(dateKey);
+    if (!existing) return;
+
+    editingRecord = {
+      breakfast: !!existing.breakfast,
+      lunch: !!existing.lunch,
+      dinner: !!existing.dinner,
+      additionalExpenses: Array.isArray(existing.additionalExpenses)
+        ? JSON.parse(JSON.stringify(existing.additionalExpenses))
+        : []
+    };
+
+    document.getElementById('edit-modal-date-title').textContent = formatDisplayDate(dateKey);
+    document.getElementById('edit-check-breakfast').checked = editingRecord.breakfast;
+    document.getElementById('edit-check-lunch').checked = editingRecord.lunch;
+    document.getElementById('edit-check-dinner').checked = editingRecord.dinner;
+
+    renderEditModalExpenses();
+    updateEditModalTotals();
+    document.getElementById('edit-day-modal').classList.add('active');
+  }
+
+  function closeEditDayModal() {
+    document.getElementById('edit-day-modal').classList.remove('active');
+    editingDateKey = null;
+    editingRecord = null;
+  }
+
+  function onEditMealCheckboxChanged() {
+    if (!editingRecord) return;
+    editingRecord.breakfast = document.getElementById('edit-check-breakfast').checked;
+    editingRecord.lunch = document.getElementById('edit-check-lunch').checked;
+    editingRecord.dinner = document.getElementById('edit-check-dinner').checked;
+    updateEditModalTotals();
+  }
+
+  function renderEditModalExpenses() {
+    const listEl = document.getElementById('edit-modal-expenses-list');
+    listEl.innerHTML = '';
+    if (!editingRecord || editingRecord.additionalExpenses.length === 0) {
+      listEl.innerHTML = '<li class="empty-expenses" style="padding: 4px 0;">No additional expenses.</li>';
+      return;
+    }
+    editingRecord.additionalExpenses.forEach((item, idx) => {
+      const li = document.createElement('li');
+      li.className = 'expense-item';
+      li.style.padding = '6px 10px';
+      li.style.fontSize = '0.85rem';
+      li.innerHTML = `
+        <span>${escapeHtml(item.description)}</span>
+        <div class="expense-item-right" style="gap: 8px;">
+          <span style="font-weight: 600; color: var(--primary);">${Number(item.amount).toFixed(2)}</span>
+          <button type="button" class="btn-delete-item" onclick="removeEditModalExpense(${idx})" style="font-size: 1.1rem; line-height: 1;">&times;</button>
+        </div>
+      `;
+      listEl.appendChild(li);
+    });
+  }
+
+  function removeEditModalExpense(idx) {
+    if (!editingRecord) return;
+    editingRecord.additionalExpenses.splice(idx, 1);
+    renderEditModalExpenses();
+    updateEditModalTotals();
+  }
+
+  function handleAddEditModalExpense(e) {
+    e.preventDefault();
+    const descEl = document.getElementById('edit-input-desc');
+    const amountEl = document.getElementById('edit-input-amount');
+    const desc = descEl.value.trim();
+    const amount = parseFloat(amountEl.value);
+    if (!desc || isNaN(amount) || amount < 0) return;
+
+    editingRecord.additionalExpenses.push({
+      id: Date.now(),
+      description: desc,
+      amount: amount
+    });
+
+    descEl.value = '';
+    amountEl.value = '';
+    renderEditModalExpenses();
+    updateEditModalTotals();
+  }
+
+  function updateEditModalTotals() {
+    if (!editingRecord) return;
+    const rates = getMealRates();
+    const bCost = editingRecord.breakfast ? rates.breakfast : 0;
+    const lCost = editingRecord.lunch ? rates.lunch : 0;
+    const dCost = editingRecord.dinner ? rates.dinner : 0;
+    const miscCost = editingRecord.additionalExpenses.reduce((s, it) => s + Number(it.amount || 0), 0);
+    const totalCost = bCost + lCost + dCost + miscCost;
+
+    document.getElementById('edit-modal-dinner-val').textContent = dCost.toFixed(2);
+    document.getElementById('edit-modal-misc-val').textContent = miscCost.toFixed(2);
+    document.getElementById('edit-modal-total-val').textContent = totalCost.toFixed(2);
+  }
+
+  function saveEditModalChanges() {
+    if (!editingDateKey || !editingRecord) return;
+    const rates = getMealRates();
+    const bCost = editingRecord.breakfast ? rates.breakfast : 0;
+    const lCost = editingRecord.lunch ? rates.lunch : 0;
+    const dCost = editingRecord.dinner ? rates.dinner : 0;
+    const miscCost = editingRecord.additionalExpenses.reduce((s, it) => s + Number(it.amount || 0), 0);
+    const totalCost = bCost + lCost + dCost + miscCost;
+
+    const record = {
+      date: editingDateKey,
+      breakfast: editingRecord.breakfast,
+      lunch: editingRecord.lunch,
+      dinner: editingRecord.dinner,
+      breakfastCost: bCost,
+      lunchCost: lCost,
+      dinnerCost: dCost,
+      additionalExpenses: editingRecord.additionalExpenses,
+      totalDayCost: totalCost,
+      timestamp: Date.now()
+    };
+
+    saveRecord(editingDateKey, record);
+    closeEditDayModal();
+    renderViewExpense();
+  }
+
+  function deleteCurrentEditDay() {
+    if (!editingDateKey) return;
+    if (!confirm(`Delete records for ${formatDisplayDate(editingDateKey)}?`)) return;
+
+    const records = getRecords();
+    delete records[editingDateKey];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+
+    closeEditDayModal();
+    renderViewExpense();
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>"']/g, m => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[m]);
+  }
+
+  // Initial Boot
+  window.addEventListener('DOMContentLoaded', () => {
+    selectedDateStr = formatDate(new Date());
+    calendarYear = new Date().getFullYear();
+    calendarMonth = new Date().getMonth();
+    viewExpenseYear = calendarYear;
+    viewExpenseMonth = calendarMonth;
+    updateMealRateBadges();
+  });
+</script>
+
+</body>
+</html>
